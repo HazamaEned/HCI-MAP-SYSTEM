@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Map System</title>
+    <link rel="stylesheet" href="../css/index.css">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet">
+</head>
+    <body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div><img src="../components/plp.png" alt="Logo"></div>
+        <div><span class="school-name">Pamantansan ng Lungsod ng Pasig</span></div>
+    </header>
+
+    <div class="app">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <button onclick="showHome()">Home</button>
+            <button onclick="showMap()">Map</button>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main">
+
+
+            <div id="home-view" class="view">
+
+                <div class="hero">
+                    <div class="hero-tag">
+                        <svg viewBox="0 0 12 12" fill="#155c30" width="12" height="12"><circle cx="6" cy="6" r="5"/><circle cx="6" cy="6" r="2" fill="white"/></svg>
+                        PLP Campus Navigator
+                    </div>
+                    <h1 class="hero-title">Find your way<br>around campus</h1>
+                    <p class="hero-sub">The PLP Route Finder helps students, faculty, and visitors navigate Pamantasan ng Lungsod ng Pasig. Search for any room or office and get the shortest path instantly.</p>
+                    <div class="hero-actions">
+                        <button class="btn-primary" onclick="showMap()">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="white" stroke-width="1.5" width="14" height="14">
+                                <rect x="1" y="1" width="14" height="14" rx="2"/>
+                                <path d="M1 7h14M7 7v8"/>
+                            </svg>
+                            Open map
+                        </button>
+                    </div>
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <span class="stat-num">8</span>
+                        <span class="stat-label">Floors mapped</span>
+                    </div>
+                </div>
+
+                <div class="features-section">
+                    <p class="section-label">What it does</p>
+                    <div class="feat-grid">
+
+                        <div class="feat-card">
+                            <div class="feat-icon feat-blue">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="#0c447c" stroke-width="1.5" width="16" height="16">
+                                    <path d="M2 8h12M10 4l4 4-4 4"/>
+                                    <path d="M6 4L2 8l4 4" opacity="0.4"/>
+                                </svg>
+                            </div>
+                            <h3>Shortest route</h3>
+                            <p>Automatically calculates and highlights the possible paths.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- MAP VIEW -->
+
+            <div class="map-toolbar">
+                <button class="tool-btn active" id="tool-wall" onclick="setMode('wall')">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                        <rect x="2" y="2" width="5" height="5" rx="1"/>
+                        <rect x="9" y="2" width="5" height="5" rx="1"/>
+                        <rect x="2" y="9" width="5" height="5" rx="1"/>
+                        <rect x="9" y="9" width="5" height="5" rx="1"/>
+                    </svg>
+                    Draw walls
+                </button>
+                <button class="tool-btn" id="tool-path" onclick="setMode('path')">
+                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                        <circle cx="3" cy="8" r="2"/><circle cx="13" cy="8" r="2"/>
+                        <path d="M5 8h6"/>
+                    </svg>
+                    Find path
+                </button>
+                <button class="tool-btn" id="tool-clear" onclick="clearAll()">Clear</button>
+            </div>
+
+
+            <div id="map-view" class="view hidden">
+                <div class="map-layout">
+                    
+                    <!-- Elevator panel -->
+                    <div class="elevator-panel">
+                        <span class="elev-label">Floor</span>
+                        <div class="elev-track">
+                            <button class="floor-btn" data-floor="8" onclick="selectFloor(this)">8</button>
+                            <button class="floor-btn" data-floor="7" onclick="selectFloor(this)">7</button>
+                            <button class="floor-btn" data-floor="6" onclick="selectFloor(this)">6</button>
+                            <button class="floor-btn" data-floor="5" onclick="selectFloor(this)">5</button>
+                            <button class="floor-btn" data-floor="4" onclick="selectFloor(this)">4</button>
+                            <button class="floor-btn" data-floor="3" onclick="selectFloor(this)">3</button>
+                            <button class="floor-btn" data-floor="2" onclick="selectFloor(this)">2</button>
+                            <button class="floor-btn active" data-floor="1" onclick="selectFloor(this)">1</button>
+                        </div>
+                    </div>
+
+                    <!-- Map loads here -->
+                    <div id="map-container"></div>
+
+                </div>
+            </div>
+
+            <script src="../javascript/index.js"></script>
+            <script src="../javascript/pathfinding.js"></script>
+        </main>
+
+    </div>
+    </body>
+</html>
