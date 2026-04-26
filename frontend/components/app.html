@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Campus Accessibility Mapping System</title>
+  <meta name="description" content="Plan step-free, wheelchair-accessible routes across campus. Report obstructions and discover accessible facilities." />
+  <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <span class="logo-icon">♿</span>
+          <div>
+            <div class="logo-title">CampusAccess</div>
+            <div class="logo-sub">Accessibility Map</div>
+          </div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#/" class="nav-link" data-route="/"><span class="ico">🗺️</span> Home Map</a>
+        <a href="#/find-route" class="nav-link" data-route="/find-route"><span class="ico">🧭</span> Find Route</a>
+        <a href="#/report" class="nav-link" data-route="/report"><span class="ico">⚠️</span> Report Obstruction</a>
+        <a href="#/reports" class="nav-link" data-route="/reports"><span class="ico">📋</span> Reports List</a>
+        <a href="#/guide" class="nav-link" data-route="/guide"><span class="ico">📘</span> Guide</a>
+        <a href="#/about" class="nav-link" data-route="/about"><span class="ico">ℹ️</span> About</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="acc-block">
+          <div class="acc-title">Accessibility</div>
+          <label class="switch-row">
+            <span>High Contrast</span>
+            <input type="checkbox" id="opt-contrast" />
+          </label>
+          <label class="switch-row">
+            <span>Large Text</span>
+            <input type="checkbox" id="opt-largetext" />
+          </label>
+          <label class="switch-row">
+            <span>Reduce Motion</span>
+            <input type="checkbox" id="opt-motion" />
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main column -->
+    <div class="main-col">
+      <!-- Topbar -->
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menu-btn" aria-label="Toggle menu">☰</button>
+        <div class="search">
+          <span class="search-ico">🔍</span>
+          <input type="text" id="search-input" placeholder="Search buildings, ramps, or facilities…" />
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn" id="bell-btn" aria-label="Notifications">
+            🔔 <span class="badge" id="bell-badge" hidden>0</span>
+          </button>
+          <div class="avatar" title="Student">S</div>
+        </div>
+        <!-- Notifications dropdown -->
+        <div class="notif-dropdown" id="notif-dropdown" hidden>
+          <div class="notif-head">
+            <strong>Notifications</strong>
+            <button class="link-btn" id="clear-notifs">Clear all</button>
+          </div>
+          <div class="notif-list" id="notif-list">
+            <div class="notif-empty">No notifications yet.</div>
+          </div>
+        </div>
+      </header>
+
+      <!-- View area -->
+      <div class="view-area">
+        <main class="view" id="view"></main>
+        <!-- Right route panel -->
+        <aside class="route-panel" id="route-panel" hidden>
+          <h3>Route Planner</h3>
+          <label class="field">
+            <span>From</span>
+            <select id="route-from"></select>
+          </label>
+          <label class="field">
+            <span>To</span>
+            <select id="route-to"></select>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" id="route-stepfree" checked />
+            <span>Step-free only</span>
+          </label>
+          <label class="check-row">
+            <input type="checkbox" id="route-avoid" checked />
+            <span>Avoid reported obstructions</span>
+          </label>
+          <button class="btn btn-primary" id="route-go">Find accessible route</button>
+          <div id="route-result" class="route-result"></div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== TEMPLATES ============== -->
+
+  <template id="tpl-map">
+    <div class="page page-map">
+      <div class="map-card">
+        <div class="map-toolbar">
+          <div class="map-title">
+            <strong>Campus Map</strong>
+            <span class="muted">Live accessibility view</span>
+          </div>
+          <div class="map-tools">
+            <button class="chip" data-layer="ramps">Ramps</button>
+            <button class="chip" data-layer="elevators">Elevators</button>
+            <button class="chip" data-layer="restrooms">Restrooms</button>
+            <button class="chip active" data-layer="obstructions">Obstructions</button>
+          </div>
+          <div class="map-zoom">
+            <button class="icon-btn" id="zoom-in" aria-label="Zoom in">＋</button>
+            <button class="icon-btn" id="zoom-out" aria-label="Zoom out">－</button>
+            <button class="icon-btn" id="zoom-locate" aria-label="My location">📍</button>
+          </div>
+        </div>
+        <div class="map-stage" id="map-stage">
+          <svg id="map-svg" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--map-grid)" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <rect width="800" height="500" fill="var(--map-bg)" />
+            <rect width="800" height="500" fill="url(#grid)" />
+            <!-- Pathways -->
+            <path d="M 80 420 L 280 420 L 280 260 L 520 260 L 520 120 L 700 120"
+                  stroke="var(--path)" stroke-width="14" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 80 420 L 280 420 L 280 260 L 520 260 L 520 120 L 700 120"
+                  stroke="var(--accessible)" stroke-width="4" fill="none" class="route-flow"
+                  stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 8"/>
+            <!-- Buildings -->
+            <g id="buildings"></g>
+            <!-- Markers -->
+            <g id="markers"></g>
+          </svg>
+          <div class="map-legend">
+            <div><span class="dot dot-acc"></span> Accessible route</div>
+            <div><span class="dot dot-warn"></span> Obstruction</div>
+            <div><span class="dot dot-ramp"></span> Ramp</div>
+            <div><span class="dot dot-elev"></span> Elevator</div>
+          </div>
+          <div id="map-tooltip" class="map-tooltip" hidden></div>
+        </div>
+      </div>
+
+      <section class="recent-reports">
+        <div class="section-head">
+          <h2>Recent Reports</h2>
+          <a href="#/reports" class="link">View all →</a>
+        </div>
+        <div id="recent-list" class="recent-list"></div>
+      </section>
+    </div>
+  </template>
+
+  <template id="tpl-find-route">
+    <div class="page page-map">
+      <div class="map-card">
+        <div class="map-toolbar">
+          <div class="map-title">
+            <strong>Find Accessible Route</strong>
+            <span class="muted">Use the panel on the right</span>
+          </div>
+        </div>
+        <div class="map-stage" id="map-stage">
+          <svg id="map-svg" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <rect width="800" height="500" fill="var(--map-bg)" />
+            <path d="M 80 420 L 280 420 L 280 260 L 520 260 L 520 120 L 700 120"
+                  stroke="var(--path)" stroke-width="14" fill="none" stroke-linecap="round"/>
+            <path id="planned-route" d="" stroke="var(--accessible)" stroke-width="5" fill="none"
+                  stroke-linecap="round" stroke-dasharray="10 8" class="route-flow"/>
+            <g id="buildings"></g>
+            <g id="markers"></g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-report">
+    <div class="page page-form">
+      <div class="card">
+        <h1>Report an Obstruction</h1>
+        <p class="muted">Help others by reporting blocked paths, broken ramps, or temporary barriers.</p>
+
+        <form id="report-form" novalidate>
+          <label class="field">
+            <span>Location / Building <em>*</em></span>
+            <select name="location" required>
+              <option value="">Select a building…</option>
+            </select>
+            <small class="error" data-error="location"></small>
+          </label>
+
+          <label class="field">
+            <span>Type of obstruction <em>*</em></span>
+            <select name="type" required>
+              <option value="">Select type…</option>
+              <option>Blocked pathway</option>
+              <option>Broken ramp</option>
+              <option>Elevator out of service</option>
+              <option>Construction</option>
+              <option>Slippery surface</option>
+              <option>Other</option>
+            </select>
+            <small class="error" data-error="type"></small>
+          </label>
+
+          <label class="field">
+            <span>Severity <em>*</em></span>
+            <div class="radio-row">
+              <label><input type="radio" name="severity" value="low" /> Low</label>
+              <label><input type="radio" name="severity" value="medium" /> Medium</label>
+              <label><input type="radio" name="severity" value="high" /> High</label>
+            </div>
+            <small class="error" data-error="severity"></small>
+          </label>
+
+          <label class="field">
+            <span>Description <em>*</em></span>
+            <textarea name="description" rows="4" placeholder="Describe the obstruction…" required minlength="10"></textarea>
+            <small class="error" data-error="description"></small>
+          </label>
+
+          <label class="field">
+            <span>Your name (optional)</span>
+            <input type="text" name="reporter" placeholder="Anonymous" />
+          </label>
+
+          <div class="form-actions">
+            <button type="reset" class="btn">Reset</button>
+            <button type="submit" class="btn btn-primary">Submit Report</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-reports">
+    <div class="page page-list">
+      <div class="card">
+        <div class="section-head">
+          <h1>All Reports</h1>
+          <div class="filter-row">
+            <select id="filter-severity">
+              <option value="">All severities</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <select id="filter-status">
+              <option value="">All statuses</option>
+              <option value="open">Open</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+        </div>
+        <table class="table">
+          <thead>
+            <tr><th>Location</th><th>Type</th><th>Severity</th><th>Status</th><th>Reported</th><th></th></tr>
+          </thead>
+          <tbody id="reports-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-guide">
+    <div class="page page-text">
+      <div class="card">
+        <h1>Accessibility Guide</h1>
+        <h2>How to plan an accessible route</h2>
+        <ol>
+          <li>Open the <strong>Find Route</strong> page from the sidebar.</li>
+          <li>Select your starting building and your destination.</li>
+          <li>Enable <em>Step-free only</em> to avoid stairs.</li>
+          <li>Enable <em>Avoid reported obstructions</em> to skip blocked paths.</li>
+          <li>Click <strong>Find accessible route</strong>.</li>
+        </ol>
+        <h2>Reporting an obstruction</h2>
+        <p>Use the <strong>Report Obstruction</strong> page to flag broken ramps, blocked paths, or elevator outages. Reports appear instantly on the map for other users.</p>
+        <h2>Accessibility controls</h2>
+        <p>The bottom of the sidebar contains toggles for high contrast, larger text, and reduced motion. Your preferences persist between visits.</p>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-about">
+    <div class="page page-text">
+      <div class="card">
+        <h1>About CampusAccess</h1>
+        <p>CampusAccess is an accessibility mapping system designed to help students, staff, and visitors with mobility needs navigate the campus safely.</p>
+        <ul>
+          <li>♿ Step-free routing across all major buildings</li>
+          <li>⚠️ Real-time obstruction reports from the community</li>
+          <li>🛗 Locations of ramps, elevators, and accessible restrooms</li>
+          <li>🌗 High-contrast & large-text modes for low-vision users</li>
+        </ul>
+        <p class="muted">Built with plain HTML, CSS, and JavaScript.</p>
+      </div>
+    </div>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>
